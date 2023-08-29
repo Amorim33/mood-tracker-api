@@ -17,7 +17,7 @@ venv:
 # Setup application and install dependencies
 setup:
 	${PIP} install -U pip==23.2.1
-	${PIP} install -U pip-tools==7.0.0
+	${PIP} install -U pip-tools==7.3.0
 	make install
 
 # Install dependencies
