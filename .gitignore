@@ -26,6 +26,3 @@ coverage.xml
 
 # Environments
 .venv
-
-# Lint / Format
-.ruff_cache
