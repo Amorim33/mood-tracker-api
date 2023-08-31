@@ -16,6 +16,10 @@ exceptiongroup==1.1.3
     # via anyio
 fastapi==0.102.0
     # via -r requirements.in
+ffmpeg-python==0.2.0
+    # via -r requirements.in
+future==0.18.3
+    # via ffmpeg-python
 idna==3.4
     # via
     #   anyio

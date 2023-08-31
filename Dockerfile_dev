@@ -1,0 +1,19 @@
+FROM python:3.10-slim-buster
+
+RUN apt-get update && apt-get install ffmpeg -y
+
+# REQUIREMENTS
+COPY ./dev-requirements.txt ./dev-requirements.txt
+COPY ./requirements.txt ./requirements.txt
+
+# API
+COPY ./app ./app
+
+# TESTS
+COPY ./assets ./assets
+COPY ./conftest.py ./conftest.py
+
+RUN pip install -U pip==23.2.1 pip-tools==7.3.0
+RUN python -m piptools sync requirements.txt dev-requirements.txt
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

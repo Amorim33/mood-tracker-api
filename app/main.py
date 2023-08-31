@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 
+import ffmpeg
 import speech_recognition as sr
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,10 +58,11 @@ class MoodResponse(BaseModel):
 @app.post(
     "/api/v1/mood", response_model=MoodResponse, status_code=status.HTTP_202_ACCEPTED
 )
-def track_mood(file: UploadFile = File(...)):
+def track_mood_v1(file: UploadFile = File(...)):
     """
     The mood tracker endpoint. This endpoint will receive an audio file
     containing the user's day description and return the mood of the day.
+    The audio file must be in WAV format.
     """
     if file.content_type != "audio/wav":
         raise HTTPException(
@@ -70,6 +73,61 @@ def track_mood(file: UploadFile = File(...)):
     recognizer = sr.Recognizer()
     with sr.AudioFile(file.file) as source:
         audio = recognizer.record(source)
+
+    try:
+        text = recognizer.recognize_google(audio)
+        score = sentiment_scores(text)
+        date = datetime.now().strftime("%Y-%m-%d")
+
+        if score >= 0.05:
+            return MoodResponse(mood="Happy", date=date)
+        elif score <= -0.05:
+            return MoodResponse(mood="Sad", date=date)
+        else:
+            return MoodResponse(mood="Neutral", date=date)
+
+    except sr.UnknownValueError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Speech Recognition could not understand audio.",
+        )
+    except sr.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not request results from Google Speech Recognition service.",
+        )
+
+
+@app.post(
+    "/api/v2/mood", response_model=MoodResponse, status_code=status.HTTP_202_ACCEPTED
+)
+def track_mood_v2(file: UploadFile = File(...)):
+    """
+    The mood tracker endpoint. This endpoint will receive an audio file
+    containing the user's day description and return the mood of the day.
+    Any audio file format is accepted 😁.
+    """
+
+    if not file.content_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file must have a content type.",
+        )
+
+    input_path = f"file.{file.content_type.split('/')[1]}"
+    output_path = "file.wav"
+
+    with open(input_path, "wb") as buffer:
+        buffer.write(file.file.read())
+
+    ffmpeg.input(input_path).output(output_path).run(overwrite_output=True)
+
+    recognizer = sr.Recognizer()
+    with sr.AudioFile(output_path) as source:
+        audio = recognizer.record(source)
+
+    os.remove(input_path)
+    os.remove(output_path)
 
     try:
         text = recognizer.recognize_google(audio)
