@@ -16,6 +16,7 @@ venv:
 
 # Setup application and install dependencies
 setup:
+	@echo "Setting up application..."
 	${PIP} install -U pip==23.2.1
 	${PIP} install -U pip-tools==7.3.0
 	make install
@@ -23,7 +24,7 @@ setup:
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
-	${PYTHON} -m piptools sync requirements.txt dev-requirements.txt
+	$(VENV)/bin/pip-sync requirements.txt dev-requirements.txt
 	@echo "Done!"
 
 # Run api in development mode
@@ -52,6 +53,5 @@ lint:
 # Generate lock file for dependencies
 generate-requirements:
 	@echo "Generating requirements.txt..."
-	${PYTHON} -m piptools compile --generate-hashes --output-file=requirements.txt requirements.in
-	${PYTHON} -m piptools compile --generate-hashes --output-file=dev-requirements.txt dev-requirements.in
+	$(VENV)/bin/pip-compile requirements.in && $(VENV)/bin/pip-compile dev-requirements.in
 	@echo "Done!"
